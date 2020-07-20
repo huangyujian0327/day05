@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>人员管理</title>
+    <script src="axios.js"></script>
+    <script src="vue.js"></script>
+</head>
+<body>
+<div id="app">
+    <h1>用户管理</h1>
+    姓名:<input v-model="empVo.name"><br>
+    性别:<input v-model="empVo.sex" type="radio" value="1" >男
+    <input type="radio" value="0" v-model="empVo.sex" >女<br>
+    年龄:<input v-model="empVo.startage">—<input v-model="empVo.endage"><br>
+    生日:<input v-model="empVo.startbirthday"  type="date">—<input v-model="empVo.endbirthday"  type="date"><br>
+    部门:<select v-model="empVo.did">
+    <option value="0">请选择部门</option>
+    <option v-for="dept in depts" :key="dept.id" :value="dept.id">{{dept.name}}</option>
+</select><br>
+    <button @click="search">查询</button>
+    <br><br>
+    <a href="add.html">添加</a>
+    <table border="1">
+        <tr>
+            <td>编号</td>
+            <td>姓名</td>
+            <td>性别</td>
+            <td>年龄</td>
+            <td>生日</td>
+            <td>部门</td>
+            <td>操作</td>
+        </tr>
+
+        <tr v-for="emp in page.list" :key="emp.id">
+            <td>{{emp.id}}</td>
+            <td>{{emp.name}}</td>
+            <td>{{emp.sex==1?'男':'女'}}</td>
+            <td>{{emp.age}}</td>
+            <td>{{formatter(emp.birthday,'yyyy-MM-dd')}}</td>
+            <td>{{emp.dname}}</td>
+            <td>
+                <a @click="toEdit(emp.id)">修改</a>
+                <a @click="del(emp.id)">删除</a>
+            </td>
+        </tr>
+    </table>
+
+    <button @click="jump(page.firstPage)">首页</button>
+    <button @click="jump(page.prePage)">上一页</button>
+    <button @click="jump(page.pageNum<page.lastPage?page.nextPage:page.lastPage)">下一页</button>
+    <!--
+        <button @click="jump(page.nextPage==0?page.lastPage:page.nextPage)">下一页</button>
+    -->
+    <button @click="jump(page.lastPage)">尾页</button>
+</div>
+</body>
+<script>
+    var app = new Vue({
+        el:"#app",
+        data:{
+            empVo:{
+                did:0
+            },
+            depts:[],
+            page:{
+                list:[]
+            }
+        },
+        methods:{
+            jump(pageNum){
+                this.getData(pageNum);
+            },
+            getData(pageNum){ //查询数据 findPage
+                var that = this;
+                axios.post("http://localhost:8080/maven-ssm/emp/findPage.do?pageNum="+pageNum,this.empVo).then(function({data}=res){
+                    that.page = data;
+                });
+            },
+            search(){
+                this.getData(this.page.pageNum);
+            },
+            toEdit(id){
+                location.href="add.html?id="+id;
+            },
+            del(id){
+                axios.get("http://localhost:8080/maven-ssm/emp/del.do?id="+id).then(function({data}=res){
+                    location.href="index.html";
+                });
+            },
+            formatter (thistime, fmt) {
+                let $this = new Date(thistime)
+                let o = {
+                    'M+': $this.getMonth() + 1,
+                    'd+': $this.getDate(),
+                    'h+': $this.getHours(),
+                    'm+': $this.getMinutes(),
+                    's+': $this.getSeconds(),
+                    'q+': Math.floor(($this.getMonth() + 3) / 3),
+                    'S': $this.getMilliseconds()
+                }
+                if (/(y+)/.test(fmt)) {
+                    fmt = fmt.replace(RegExp.$1, ($this.getFullYear() + '').substr(4 - RegExp.$1.length))
+                }
+                for (var k in o) {
+                    if (new RegExp('(' + k + ')').test(fmt)) {
+                        fmt = fmt.replace(RegExp.$1, (RegExp.$1.length === 1) ? (o[k]) : (('00' + o[k]).substr(('' + o[k]).length)))
+                    }
+                }
+                return fmt
+            }
+        },
+        created(){
+            var that = this;
+            this.getData(1);
+            axios.get("http://localhost:8080/maven-ssm/dept/findAll.do").then(function({data}=res){
+                that.depts = data;
+            });
+        }
+    });
+</script>
+</html>

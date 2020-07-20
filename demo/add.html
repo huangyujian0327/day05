@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>人员管理</title>
+    <script src="vue.js"></script>
+    <script src="axios.js""></script>
+</head>
+<body>
+<div id="app">
+    姓名:<input v-model="emp.name"><br>
+    性别:<input v-model="emp.sex" type="radio" value="1" >男
+    <input type="radio" value="0" v-model="emp.sex" >女<br>
+    年龄:<input v-model="emp.age"><br>
+    生日:<input v-model="emp.birthday"  type="date"><br>
+    部门:<select v-model="emp.did">
+    <option value="0">请选择部门</option>
+    <option v-for="dept in depts" :key="dept.id" :value="dept.id">{{dept.name}}</option>
+</select><br>
+
+    <button @click="save">保存</button>
+    <button @click="goBack">返回</button>
+</div>
+</body>
+<script>
+    var app = new Vue({
+        el:"#app",
+        data:{
+            emp:{
+                did:0
+            },
+            depts:[]
+        },
+        methods:{
+            save(){
+                var that = this;
+                axios.post("http://localhost:8080/maven-ssm/emp/save.do",this.emp).then(function({data}=res){
+                    location.href="index.html";
+                });
+            },
+            goBack(){
+                location.href="index.html";
+            },
+            formatter (thistime, fmt) {
+                let $this = new Date(thistime)
+                let o = {
+                    'M+': $this.getMonth() + 1,
+                    'd+': $this.getDate(),
+                    'h+': $this.getHours(),
+                    'm+': $this.getMinutes(),
+                    's+': $this.getSeconds(),
+                    'q+': Math.floor(($this.getMonth() + 3) / 3),
+                    'S': $this.getMilliseconds()
+                }
+                if (/(y+)/.test(fmt)) {
+                    fmt = fmt.replace(RegExp.$1, ($this.getFullYear() + '').substr(4 - RegExp.$1.length))
+                }
+                for (var k in o) {
+                    if (new RegExp('(' + k + ')').test(fmt)) {
+                        fmt = fmt.replace(RegExp.$1, (RegExp.$1.length === 1) ? (o[k]) : (('00' + o[k]).substr(('' + o[k]).length)))
+                    }
+                }
+                return fmt
+            }
+        },
+        created(){
+
+            console.log(location.search);// ?id=53 字符串
+
+            debugger;
+            var id = location.search.substring(4);
+            // if(location.search!=""){ //修改操作，需要查询数据，页面进行数据回显
+            if(id!=""){ //修改操作，需要查询数据，页面进行数据回显
+                axios.get("http://localhost:8080/maven-ssm/emp/findById.do?id="+id).then(function({data}=res){
+                    // axios.get("http://localhost:8080/maven-ssm/emp/findById.do"+location.search).then(function({data}=res){
+                    that.emp = data;
+                    that.emp.birthday = that.formatter(that.emp.birthday,'yyyy-MM-dd');
+                });
+            }
+
+
+
+            var that = this;
+            axios.get("http://localhost:8080/maven-ssm/dept/findAll.do").then(function({data}=res){
+                that.depts = data;
+            });
+        }
+    });
+</script>
+</html>
